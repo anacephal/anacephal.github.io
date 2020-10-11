@@ -2,11 +2,9 @@
   <head>
     <style>
       #root {
-        width: 360px;
       }
       #uncles-message {
-        width:360px;
-        height:250px;
+        height:450px;
         overflow: scroll;
         border:1px solid silver;
         border-radius:15px;
@@ -14,8 +12,7 @@
       }
 
       #action-panel {
-        margin-top: 20px;
-        width:360px;
+        margin-top: 40px;
         border:1px solid silver;
         border-radius:15px;
         padding:10px;
@@ -31,17 +28,25 @@
         margin-top: 10px;
       }
       #stash-distances {
-        margin-top: 20px;
-        width:360px;
+        margin-top: 40px;
         border:1px solid silver;
         border-radius:15px;
+        padding:10px;
+      }
+      button {
+        font-size:32pt;
+        border:1px solid gray;
+        background-color:transparent;
+        border-radius: 10px;
+        margin-top:20px;
+        margin-right:20px;
         padding:10px;
       }
     </style>
   </head>
   <body>
     <div id="root">
-      <label><b>Зашифрованное сообщение</b></label>
+      <label><b>Зашифрованное сообщение:</b></label>
       <div id="uncles-message">
         <div id="decyphered-message"></div>
       </div>
@@ -59,7 +64,7 @@
         </div>
       </div>
       <div id="stash-distances">
-        <label><b>Компас</b></label>
+        <label><b>Компас:</b></label>
         <div id="stash-dist-A"></div>
         <div id="stash-dist-B"></div>
         <div id="stash-dist-C"></div>
