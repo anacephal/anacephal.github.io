@@ -4,8 +4,12 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <style>
+      #story {
+        font-size: 30pt;
+      }
       #root {
         font-size:30pt;
+        display:none;
       }
       #uncles-message {
         height:450px;
@@ -46,16 +50,26 @@
         margin-right:20px;
         padding:10px;
       }
+      #proceed-to-study{
+        color: rgb(61, 126, 154);
+        border:2px solid rgb(61, 126, 154);
+        display:none;
+      }
     </style>
   </head>
   <body>
+    <div id="story">
+      <div id="story-text"></div>
+      <button id="story-next">Далее</button>
+    </div>
     <div id="root">
       <label><b>Зашифрованное сообщение:</b></label>
       <div id="uncles-message">
         <div id="decyphered-message"></div>
       </div>
+      <button id="proceed-to-study">Зачитать сообщение в дядином кабинете</button>
       <div id="action-panel">
-        <label><b>Инструкция для водолаза:</b></label>
+        <label><b>Инструкция для шахтёра:</b></label>
         <label id="steps"></label>
         <label id="prev-steps"></label>
         <div id="actions">
@@ -75,6 +89,30 @@
       </div>
     </div>
     <script>
+      function showTxtInStory(text, delay){
+        var nextBtn = document.getElementById("story-next");
+        nextBtn.style.display = "none";
+        var story = document.getElementById("story-text");
+        typeInElement(story, text, 0, delay, delay, () => {
+          var nextBtn = document.getElementById("story-next");
+          nextBtn.style.display = "block";
+        });
+      }
+
+      function typeInElement(el, text, currentIndex, originalTimeout, timeout, finalCallback){
+        setTimeout(() => {
+          var textNode = document.createTextNode(text[currentIndex++]);
+          el.appendChild(textNode);
+          if(currentIndex == text.length) {
+            finalCallback();
+            return;
+          }
+          var nextTimeout = originalTimeout*0.7 + 0.6*Math.random()*originalTimeout;
+          typeInElement(el, text, currentIndex, originalTimeout, nextTimeout, finalCallback);
+        }, timeout);
+      }
+    </script>
+    <script>
       //Button registrations
       document.getElementById("up").addEventListener('click', () => {
         eventMachine.fire({type:"up-btn"});
@@ -93,6 +131,12 @@
       });
       document.getElementById("reset").addEventListener('click', () => {
         eventMachine.fire({type:"reset-btn"});
+      });
+      document.getElementById("story-next").addEventListener('click', () => {
+        eventMachine.fire({type:"story-next"});
+      });
+      document.getElementById("proceed-to-study").addEventListener('click', () => {
+        eventMachine.fire({type:"third-screen"});
       });
     </script>
     <script>
@@ -296,6 +340,9 @@
         setStashPositions();
         setupEventRegistrations();
 
+        eventMachine.fire({type:"first-screen"});
+        //eventMachine.fire({type:"second-screen"});
+        //eventMachine.fire({type:"third-screen"});
         var stashDistances = calculateDistancesToStashes(startPos);
         eventMachine.fire({ type: "stashDistancesUpdate", payload: stashDistances });
       }
@@ -316,6 +363,10 @@
           decypheredMessage = decypherMessage(cypheredMessage, availableCyphers);
           var decypheredMessageElement = document.getElementById("decyphered-message");
           decypheredMessageElement.innerText = decypheredMessage;
+
+          if(foundCyphers.length == 3){
+            document.getElementById("proceed-to-study").style.display = "block";
+          }
         });
 
         eventMachine.register("stashDistancesUpdate", (payload) => {
@@ -360,6 +411,60 @@
 
         eventMachine.registerMultiple(["up-btn", "down-btn", "right-btn", "left-btn", "after-send"], () => {
           document.getElementById("steps").innerHTML =  steps.reduce((acc, step) => acc + ` ${step},`, "");
+        });
+
+        eventMachine.register("first-screen", () => {
+          window.storyNumber = 0;
+          showTxtInStory("Ваш богатый и до сих пор не объявлявший о себе покойный троюрдный дядюшка оставил вам завещание. ", 30);
+        });
+
+        eventMachine.register("story-next", () => {
+          window.storyNumber++;
+          if(window.storyNumber == 6){
+            eventMachine.fire({type:"second-screen"});
+            return;
+          }
+          var txt;
+          switch(window.storyNumber){
+            case 1:
+              txt = "Чтобы получить доступ к завещанию, вам нужно расшифровать сообщение, оставленное вашим дядей, и зачитать полученное послание в его кабинете. ";
+              break;
+            case 2:
+              txt = "Известно, что шифр разбит на 3 части и спрятан в шахте, принадлежащей вашему покойному родственнику. Как только все 3 свитка будут найдены, сообщение будет расшифровано и можно будет перейти в кабинет дяди. ";
+              break;
+            case 3:
+              txt = "В атмосфере рудника обнаружена взрывоопасная концентрация метана, поэтому задействовать можно только одного шахтёра, а передвигаться он может только наощупь и только по заранее заданному алгоритму. ";
+              break;
+            case 4:
+              txt = "У шахтера есть шифро-локатор, который указывает оставшееся расстояние (но не направление) до каждого из свитков. Шифролокатор используется каждый раз по окончании движения шахтёра. "
+              break;
+            case 5:
+              txt = "Ваша задача используя шифролокатор дать шахтёру инструкцию для движения в руднике в виде последовательности команд \"вверх\", \"вниз\", \"влево\", \"вправо\". ";
+              break;
+            case 7:
+              txt = "В корпусе стола что-то щёлкает и на пол опускается конверт. Вы раскрываете конверт, внутри лежит письмо, в котором написана всего одна строчка. \"Сходи с Димой на свидание\". ";
+              break;
+            case 8:
+              txt = "\nКонец. Апплодисменты. "
+              break;
+            case 9:
+              txt = "\nЕщё апплодисменты. ";
+              break;
+          }
+          showTxtInStory(txt, 30);
+        });
+
+        eventMachine.register("second-screen", () => {
+          document.getElementById("story").style.display = "none";
+          document.getElementById("root").style.display = "block";
+        });
+
+        eventMachine.register("third-screen", () => {
+          window.storyNumber = 6;
+          document.getElementById("root").style.display = "none";
+          document.getElementById("story").style.display = "block";
+          document.getElementById("story-text").innerText = "";
+          showTxtInStory("Вы входите в кабинет дяди, проходите к письменному столу, садитесь в кресло и с плотным русским акцентом зачитываете стихотворение. ", 30);
         });
       }
 
@@ -457,7 +562,7 @@
 
       //checking stashes
       // A
-      var dirs = ["up", "up", "up", "right", "right", "right", "right"];
+      var dirs = ["вверх", "вверх", "вверх", "вправо", "вправо", "вправо", "вправо"];
       // B
       //var dirs = ["down", "down", "down", "down", "down", "left", "left", "left", "left"];
       // C
@@ -467,12 +572,12 @@
     }
 
     function testB(){
-      var dirs = ["down", "down", "down", "down", "down", "left", "left", "left", "left"];
+      var dirs = ["вниз", "вниз", "вниз", "вниз", "вниз", "влево", "влево", "влево", "влево"];
       exploreCell(dirs);
     }
 
     function testC(){
-      var dirs = ["up", "up", "up", "up", "up", "left", "left"];
+      var dirs = ["вверх", "вверх", "вверх", "вверх", "вверх", "влево", "влево"];
 
       exploreCell(dirs);
     }
