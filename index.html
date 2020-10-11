@@ -1,0 +1,425 @@
+<html>
+  <head></head>
+  <body>
+    <div id="root">
+      <div id="uncles-message">
+            </br>
+        <div id="decyphered-message"></div>
+      </div>
+      <div id="action-panel">
+        <label>Инструкция для водолаза:</label>
+        <label id="steps"></label>
+        <label id="prev-steps"></label>
+        <button id="up">Вверх</button>
+        <button id="down">Вниз</button>
+        <button id="left">Влево</button>
+        <button id="right">Вправо</button>
+        <button id="send">Отправить</button>
+        <button id="reset">Сбросить</button>
+      </div>
+      <div id="stash-distances">
+        <div id="stash-dist-A"></div>
+        <div id="stash-dist-B"></div>
+        <div id="stash-dist-C"></div>
+      </div>
+    </div>
+    <script>
+      //Button registrations
+      document.getElementById("up").addEventListener('click', () => {
+        eventMachine.fire({type:"up-btn"});
+      });
+      document.getElementById("down").addEventListener('click', () => {
+        eventMachine.fire({type:"down-btn"});
+      });
+      document.getElementById("left").addEventListener('click', () => {
+        eventMachine.fire({type:"left-btn"});
+      });
+      document.getElementById("right").addEventListener('click', () => {
+        eventMachine.fire({type:"right-btn"});
+      });
+      document.getElementById("send").addEventListener('click', () => {
+        eventMachine.fire({type:"send-btn"});
+      });
+      document.getElementById("reset").addEventListener('click', () => {
+        eventMachine.fire({type:"reset-btn"});
+      });
+    </script>
+    <script>
+      function EventMachine() {
+        var listeners = {};
+
+        return {
+          fire: function(event){
+            var handlers = listeners[event.type];
+            handlers.forEach(handler => handler(event.payload));
+          },
+          register: function(eventType, handler){
+            if(Object.keys(listeners).indexOf(eventType) < 0){
+              listeners[eventType] = [];
+            }
+            listeners[eventType].push(handler);
+          },
+          registerMultiple: function(eventTypes, handler){
+            eventTypes.forEach(eventType => {
+              if(Object.keys(listeners).indexOf(eventType) < 0){
+                listeners[eventType] = [];
+              }
+              listeners[eventType].push(handler);
+            });
+          }
+        }
+      }
+    </script>
+
+    <script>
+      var letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+      function generateCyphers(numOfCyphers){
+        var cyphers = [];
+        for(var i=0;i<numOfCyphers;i++){
+          cyphers[i] = {};
+        }
+
+        var lettersShuffled = shuffleArray(letters);
+        for(var i=0;i< letters.length; i++){
+          cyphers[i%numOfCyphers][letters[i]] = lettersShuffled[i];
+        }
+        return cyphers;
+      }
+
+      function shuffleArray(array){
+        var newArr = array.slice(0);
+        for(var i = array.length - 1; i > 0; i--){
+          var j = Math.floor(Math.random()* (i + 1));
+          var temp = newArr[i];
+          newArr = newArr.replace(newArr[i], newArr[j]);
+          newArr = newArr.replace(newArr[j], temp);
+        }
+        return newArr;
+      }
+    </script>
+
+     <script>
+      function cypherMessage(messageToCypher, cyphers){
+        var fullCode = {};
+        var cypheredMessage = "";
+
+        Object.keys(cyphers).forEach(cypher => {
+          Object.keys(cyphers[cypher]).forEach(key => {
+            fullCode[key] = cyphers[cypher][key];
+          });
+        });
+
+        for(var i=0;i<messageToCypher.length;i++){
+          cypheredMessage+=fullCode[messageToCypher[i]] || messageToCypher[i];
+        }
+
+        return cypheredMessage;
+      }
+
+      function decypherMessage(messageToDecypher, cyphers){
+        var decypheredMessage = "";
+
+        var reverseCypher = {};
+        Object.keys(cyphers).forEach(cypher => {
+          Object.keys(cyphers[cypher]).forEach(key => {
+            reverseCypher[cyphers[cypher][key]] = key;
+          });
+        });
+        
+        for(var i=0;i<messageToDecypher.length; i++){
+          var cypheredLetter = messageToDecypher[i];
+          var decypheredLetter = reverseCypher[cypheredLetter];
+          decypheredMessage+=decypheredLetter || cypheredLetter;
+        }
+        return decypheredMessage;
+      }
+    </script>
+
+    <script>
+      var message = "Two roads diverged in a yellow wood,\n and sorry I could not travel both";
+
+      var cyphers = generateCyphers(3);
+
+      var cypheredMessage = cypherMessage(message, cyphers);
+
+      var decypheredMessage = cypheredMessage;
+      //var cypheredMessageElement = document.getElementById("cyphered-message");
+      //cypheredMessageElement.innerText = cypheredMessage;
+
+      var decypheredMessageElement = document.getElementById("decyphered-message");
+      decypheredMessageElement.innerText = decypheredMessage;
+    </script>
+
+
+    <script>
+      // Main Script
+      var eventMachine;
+      var startPos;
+      var minPos;
+      var rowLength;
+      var maxPos;
+
+      var aPos, bPos, cPos;
+
+      var treasureMap;
+      var foundCyphers = [];
+      var steps = [];
+      var prevSteps = [];
+
+      function SetUp(){
+        eventMachine = EventMachine();
+       
+        //15 x 15
+        treasureMap = [
+        "xxxxxxxxxxxxxxx",
+        "x.............x",
+        "x....C........x",
+        "x.............x",
+        "x..........A..x",
+        "x.............x",
+        "x.............x",
+        "x......S......x",
+        "x.............x",
+        "x.............x",
+        "x.............x",
+        "x.............x",
+        "x..B..........x",
+        "x.............x",
+        "xxxxxxxxxxxxxxx"
+        ];
+
+        startPos = treasureMap.reduce((pos, row, rowIndex) => {
+          var startIdx = row.indexOf("S");
+          if(startIdx > -1){
+            return [rowIndex, startIdx];
+          }
+          return pos;
+        }, [0, 0]);
+
+        minPos = [0, 0];
+        rowLength = treasureMap.length;
+        maxPos = [rowLength -1, rowLength-1];
+
+        function setStashPositions() {
+          for(var i=0; i<treasureMap.length;i++){
+            for(var j = 0; j< rowLength; j++){
+              var curCell = treasureMap[i][j];
+              var posToUpdate;
+              switch(curCell){
+                case "A":
+                  aPos = [i,j];
+                  break;
+                case "B":
+                  bPos=[i,j];
+                  break;
+                case "C":
+                  cPos=[i,j];
+                  break;
+              }
+            }
+          }
+        }
+
+        setStashPositions();
+        setupEventRegistrations();
+
+        var stashDistances = calculateDistancesToStashes(startPos);
+        eventMachine.fire({ type: "stashDistancesUpdate", payload: stashDistances });
+      }
+
+      function setupEventRegistrations(){
+        eventMachine.register("exploreResult", (payload) => {
+          alert(payload);
+        });
+
+        eventMachine.register("cypherFound", (cypherType) => {
+          foundCyphers.push(cypherType);
+          var availableCyphers = foundCyphers.reduce((prev, cypher) => {
+            return {
+              ...prev,
+              [cypher]: cyphers[cypher]
+            };
+          }, []);
+          decypheredMessage = decypherMessage(cypheredMessage, availableCyphers);
+          var decypheredMessageElement = document.getElementById("decyphered-message");
+          decypheredMessageElement.innerText = decypheredMessage;
+        });
+
+        eventMachine.register("stashDistancesUpdate", (payload) => {
+          var stashAEl = document.getElementById("stash-dist-A");
+          stashAEl.innerText = `Расстояние до свитка А: ${payload.A}`;
+
+          var stashBEl = document.getElementById("stash-dist-B");
+          stashBEl.innerText = `Расстояние до свитка B: ${payload.B}`;
+
+          var stashCEl = document.getElementById("stash-dist-C");
+          stashCEl.innerText = `Расстояние до свитка C: ${payload.C}`;
+        });
+
+        eventMachine.register('up-btn', () => {
+          steps.push("up");
+        });
+        eventMachine.register('down-btn', () => {
+          steps.push("down");
+        });
+        eventMachine.register('left-btn', () => {
+          steps.push("left");
+        });
+        eventMachine.register('right-btn', () => {
+          steps.push("right");
+        });
+        eventMachine.register('reset-btn', () => {
+          steps = [];
+          prevSteps = [];
+          document.getElementById("steps").innerText = "";
+          document.getElementById("prev-steps").innerText = "";
+        });
+        eventMachine.register('send-btn', () => {
+          exploreCell(steps);
+          prevSteps = steps;
+          steps = [];
+          eventMachine.fire({type:"after-send"});
+        });
+
+        eventMachine.register("after-send", () => {
+          document.getElementById("prev-steps").innerText = "Предыдущие шаги: " + prevSteps.reduce((acc, step) => acc + ` ${step}`, "");
+        });
+
+        eventMachine.registerMultiple(["up-btn", "down-btn", "right-btn", "left-btn", "after-send"], () => {
+          document.getElementById("steps").innerText = "Текущие шаги: " + steps.reduce((acc, step) => acc + ` ${step},`, "");
+        });
+      }
+
+      function exploreCell(directions) {
+        var newPos = [startPos[0], startPos[1]];
+       
+        for(var key in directions){
+          switch(directions[key]){
+            case "up":
+              newPos[0]--;
+              break;
+            case "down":
+              newPos[0]++;
+              break;
+            case "left":
+              newPos[1]--;
+              break;
+            case "right":
+              newPos[1]++;
+              break;
+          }
+          var checkBoundResult = checkBounds(newPos);
+          if(checkBoundResult){
+            eventMachine.fire({type: "exploreResult", payload: `Уперлись в стену ${checkBoundResult}`});
+            return;
+          }
+        }
+        var cellResult = checkCell(newPos);
+        var stashDistances = calculateDistancesToStashes(newPos);
+
+        eventMachine.fire({ type: "exploreResult", payload: cellResult.msg });
+        if(cellResult.cypher !== undefined){
+          eventMachine.fire({ type:"cypherFound", payload: cellResult.cypher});
+        }
+        eventMachine.fire({ type: "stashDistancesUpdate", payload: stashDistances });
+      }
+
+      function calculateDistancesToStashes(pos){
+        var aDist = Math.abs(pos[0] - aPos[0]) + Math.abs(pos[1] - aPos[1]);
+        var bDist = Math.abs(pos[0] - bPos[0]) + Math.abs(pos[1] - bPos[1]);
+        var cDist = Math.abs(pos[0] - cPos[0]) + Math.abs(pos[1] - cPos[1]);
+
+        return {
+          A: aDist,
+          B: bDist,
+          C: cDist
+        };
+      }
+
+      function checkBounds(pos) {
+        if(pos[1] == minPos[1]){
+          return "слева";
+        }
+        else if(pos[1] == maxPos[1]){
+          return "справа";
+        }
+        else if(pos[0] == minPos[0]){
+          return "сверху";
+        }
+        else if(pos[0] == maxPos[0]){
+          return "снизу";
+        }
+        return null;
+      }
+
+      function checkCell(pos){
+        var cellLiteral = treasureMap[pos[0]][pos[1]];
+        switch(cellLiteral){
+          case "x":
+            return {msg:"Уперлись в стену"};
+          case "A": 
+            return {msg:"Найдена 1я часть шифра!", cypher:0};
+          case "B": 
+            return {msg:"Найдена 2я часть шифра!", cypher:1};
+          case "C":
+            return {msg:"Найдена 3я часть шифра!", cypher:2};
+          case "S":
+            return {msg:"Вы пришли к месту, из которого начали движение"};
+          default:
+            return {msg:"Здесь ничего нет"};
+        }
+      }
+     
+    </script>
+
+
+    <script>
+    //Tests
+    function testA(){
+      //checking bounds
+      //var dirs = ["left", "left", "left", "left", "left", "left", "left"];
+      //var dirs = ["right", "right", "right", "right", "right", "right", "right"];
+      //var dirs = ["up", "up", "up", "up", "up", "up", "left", "left", "left", "left", "left", "left", "left", "left"];
+      //var dirs = ["down", "down", "down", "down", "down", "down", "down", "down"];
+
+      //checking stashes
+      // A
+      var dirs = ["up", "up", "up", "right", "right", "right", "right"];
+      // B
+      //var dirs = ["down", "down", "down", "down", "down", "left", "left", "left", "left"];
+      // C
+      //var dirs = ["up", "up", "up", "up", "up", "left", "left"];
+
+      exploreCell(dirs);
+    }
+
+    function testB(){
+      var dirs = ["down", "down", "down", "down", "down", "left", "left", "left", "left"];
+      exploreCell(dirs);
+    }
+
+    function testC(){
+      var dirs = ["up", "up", "up", "up", "up", "left", "left"];
+
+      exploreCell(dirs);
+    }
+
+    var test = () => {
+      setTimeout(() => {
+        testA()
+      }, 2000);
+
+      setTimeout(() => {
+        testB()
+      }, 4000);
+
+      setTimeout(() => {
+        testC()
+      }, 6000);
+    }
+
+    SetUp();
+    //test();
+    </script>
+  </body>
+</html>
