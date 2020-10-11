@@ -1,10 +1,38 @@
 <html>
   <head>
     <style>
+      #root {
+        width: 360px;
+      }
       #uncles-message {
-        width:100%;
+        width:360px;
         height:250px;
         overflow: scroll;
+        border:1px solid silver;
+        border-radius:15px;
+        padding:10px;
+      }
+
+      #action-panel {
+        margin-top: 20px;
+        width:360px;
+        border:1px solid silver;
+        border-radius:15px;
+        padding:10px;
+      }
+      #steps {
+        display: block;
+      }
+      #prev-steps {
+        display: block;
+        color: gray;
+      }
+      #actions {
+        margin-top: 10px;
+      }
+      #stash-distances {
+        margin-top: 20px;
+        width:360px;
         border:1px solid silver;
         border-radius:15px;
         padding:10px;
@@ -13,22 +41,25 @@
   </head>
   <body>
     <div id="root">
-      <label>Зашифрованное сообщение</label>
+      <label><b>Зашифрованное сообщение</b></label>
       <div id="uncles-message">
         <div id="decyphered-message"></div>
       </div>
       <div id="action-panel">
-        <label>Инструкция для водолаза:</label>
+        <label><b>Инструкция для водолаза:</b></label>
         <label id="steps"></label>
         <label id="prev-steps"></label>
-        <button id="up">Вверх</button>
-        <button id="down">Вниз</button>
-        <button id="left">Влево</button>
-        <button id="right">Вправо</button>
-        <button id="send">Отправить</button>
-        <button id="reset">Сбросить</button>
+        <div id="actions">
+          <button id="up">Вверх</button>
+          <button id="down">Вниз</button>
+          <button id="left">Влево</button>
+          <button id="right">Вправо</button>
+          <button id="send">Отправить</button>
+          <button id="reset">Сбросить</button>
+        </div>
       </div>
       <div id="stash-distances">
+        <label><b>Компас</b></label>
         <div id="stash-dist-A"></div>
         <div id="stash-dist-B"></div>
         <div id="stash-dist-C"></div>
@@ -290,16 +321,16 @@
         });
 
         eventMachine.register('up-btn', () => {
-          steps.push("up");
+          steps.push("вверх");
         });
         eventMachine.register('down-btn', () => {
-          steps.push("down");
+          steps.push("вниз");
         });
         eventMachine.register('left-btn', () => {
-          steps.push("left");
+          steps.push("влево");
         });
         eventMachine.register('right-btn', () => {
-          steps.push("right");
+          steps.push("вправо");
         });
         eventMachine.register('reset-btn', () => {
           steps = [];
@@ -315,11 +346,11 @@
         });
 
         eventMachine.register("after-send", () => {
-          document.getElementById("prev-steps").innerText = "Предыдущие шаги: " + prevSteps.reduce((acc, step) => acc + ` ${step}`, "");
+          document.getElementById("prev-steps").innerHTML = "<i>Предыдущая инструкция:</i> " + prevSteps.reduce((acc, step) => acc + ` ${step},`, "");
         });
 
         eventMachine.registerMultiple(["up-btn", "down-btn", "right-btn", "left-btn", "after-send"], () => {
-          document.getElementById("steps").innerText = "Текущие шаги: " + steps.reduce((acc, step) => acc + ` ${step},`, "");
+          document.getElementById("steps").innerHTML =  steps.reduce((acc, step) => acc + ` ${step},`, "");
         });
       }
 
@@ -328,16 +359,16 @@
        
         for(var key in directions){
           switch(directions[key]){
-            case "up":
+            case "вверх":
               newPos[0]--;
               break;
-            case "down":
+            case "вниз":
               newPos[0]++;
               break;
-            case "left":
+            case "влево":
               newPos[1]--;
               break;
-            case "right":
+            case "вправо":
               newPos[1]++;
               break;
           }
